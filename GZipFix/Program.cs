@@ -12,10 +12,10 @@ namespace GZipFix
     {
         static void Main(string[] args)
         {
-            foreach(var file in Directory.GetFiles(args[0],"*.rtf"))
+            foreach (var file in Directory.GetFiles(args[0], "*.*"))
             {
                 Repair(file);
-            }            
+            }
         }
 
         private static void Repair(string file)
@@ -25,14 +25,15 @@ namespace GZipFix
             File.Copy(file, dest, true);
 
             int tries = 0;
-            while(!IsValidRTF(dest) && ++tries < 100)            
+            while (IsCompressed(dest) && ++tries < 100)
                 DecompressFile(dest);
         }
 
-        private static bool IsValidRTF(string file)
+        private static bool IsCompressed(string file)
         {
             var bytes = File.ReadAllBytes(file);
-            return bytes.All(b=> b < 128);
+            //31 and 139 are "magic numbers" that signify a gzipped file
+            return bytes.Length >= 2 && bytes[0] == 31 && bytes[1] == 139;
         }
 
         private static void DecompressFile(string file)
@@ -41,7 +42,7 @@ namespace GZipFix
             using (var fileStream = File.OpenRead(file))
             {
                 using (var compressedStream = new GZipStream(fileStream, CompressionMode.Decompress))
-                {                   
+                {
                     using (var memoryStream = new MemoryStream())
                     {
                         try
@@ -63,7 +64,7 @@ namespace GZipFix
             File.WriteAllBytes(file, buffer);
         }
 
-        
+
 
     }
 }
